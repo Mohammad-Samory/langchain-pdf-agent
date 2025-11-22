@@ -1,0 +1,51 @@
+services:
+  pdf-agent-base:
+    build:
+      context: .
+    image: pdf-agent
+    container_name: pdf-agent-base
+    volumes:
+      - .:/app
+    environment:
+      - DB_HOST=pdf-agent-postgres
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DB_NAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - ENVIRONMENT=development
+      - LOG_LEVEL=DEBUG
+      - VIRTUAL_HOST=pdf-agent.docker
+    command: ["echo", "I only exist to be extended"]
+
+  pdf-agent:
+    extends: pdf-agent-base
+    container_name: pdf-agent
+    ports:
+      - 8200:80
+    depends_on:
+      - pdf-agent-postgres
+    command: ["sh", "bin/boot.sh"]
+
+  pdf-agent-postgres:
+    image: postgres:17.1
+    container_name: pdf-agent-postgres
+    ports:
+      - 5432
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - VIRTUAL_HOST=pdf-agent-postgres.docker
+
+  pdf-agent-test:
+    extends:
+      service: pdf-agent-base
+    container_name: pdf-agent-test
+    command: ["python", "-W", "always::DeprecationWarning", "-m", "pytest"]
+
+  pdf-agent-lint:
+    extends: pdf-agent-base
+    container_name: pdf-agent-lint
+    command: >
+      /bin/sh -c "flake8 . && isort --check --diff . && mypy pdf_agent/"

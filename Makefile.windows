@@ -1,0 +1,59 @@
+# Windows Makefile using PowerShell commands
+# To use this on Windows, run: make -f Makefile.windows <target>
+# Or rename this to Makefile
+
+.PHONY: clean
+clean:
+	if exist .pytest_cache rd /s /q .pytest_cache
+	if exist .mypy_cache rd /s /q .mypy_cache
+	if exist .coverage del /f .coverage
+
+.PHONY: destroy
+destroy:
+	docker-compose down
+
+.PHONY: lint
+lint:
+	docker-compose run --rm pdf-agent-test sh -c "flake8 . && isort --check --diff . && mypy pdf_agent/"
+
+.PHONY: refreeze
+refreeze:
+	powershell -ExecutionPolicy Bypass -File bin/refreeze.ps1
+
+.PHONY: run
+run:
+	docker-compose up pdf-agent
+
+.PHONY: build
+build:
+	docker-compose build pdf-agent
+
+.PHONY: test
+test:
+	docker-compose run --rm pdf-agent-test
+
+.PHONY: coverage
+coverage:
+	docker-compose run --rm pdf-agent-test sh -c "coverage run -m pytest --durations=10 && coverage report -m"
+
+.PHONY: alembic-version
+alembic-version:
+	docker-compose run --rm pdf-agent sh -c "alembic revision --autogenerate -m \"$(msg)\""
+
+.PHONY: run-local
+run-local:
+	powershell -ExecutionPolicy Bypass -File bin/boot.ps1
+
+.PHONY: help
+help:
+	@echo Available targets:
+	@echo   clean           - Remove cache directories and coverage files
+	@echo   destroy         - Stop and remove all containers
+	@echo   lint            - Run linting checks (flake8, isort, mypy)
+	@echo   refreeze        - Rebuild container and freeze dependencies
+	@echo   run             - Run the application in Docker
+	@echo   run-local       - Run the application locally (Windows)
+	@echo   build           - Build the Docker container
+	@echo   test            - Run tests
+	@echo   coverage        - Run tests with coverage report
+	@echo   alembic-version - Create a new Alembic migration (use msg="description")
