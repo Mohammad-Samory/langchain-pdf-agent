@@ -1,28 +1,22 @@
 """LangGraph React-style agent for PDF Q&A."""
-from typing import Annotated, List, Literal, TypedDict
+from typing import List, Literal
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
-from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 
+from pdf_agent.application.base_service import BaseService
 from pdf_agent.configs.env import GOOGLE_API_KEY, LLM_PROVIDER, OPENAI_API_KEY
 from pdf_agent.configs.log import get_logger
+from pdf_agent.domain.pdf.agent_state import AgentState
 from pdf_agent.infrastructure.vectorstore.vector_store import VectorStore
 
 logger = get_logger()
 
 
-class AgentState(TypedDict):
-    """State for the PDF Q&A agent."""
-    messages: Annotated[List[BaseMessage], add_messages]
-    search_results: List[dict]
-    final_answer: str
-
-
-class PDFQAAgent:
+class PDFQAAgent(BaseService):
     """LangGraph-powered conversational agent for PDF Q&A."""
 
     def __init__(
@@ -33,6 +27,7 @@ class PDFQAAgent:
         provider: str = None
     ):
         """Initialize the agent with vector store and LLM."""
+        super().__init__()
         self.vector_store = vector_store
         self.model_name = model_name
         self.temperature = temperature

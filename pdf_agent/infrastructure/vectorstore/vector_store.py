@@ -5,6 +5,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 
+from pdf_agent.application.services.pdf_document_helper import total_chunks
 from pdf_agent.configs.log import get_logger
 from pdf_agent.domain.pdf.pdf_document import PDFDocument
 
@@ -94,7 +95,7 @@ class VectorStore:
         return {
             "filename": self.current_document.filename,
             "total_pages": self.current_document.total_pages,
-            "total_chunks": self.current_document.total_chunks(),
+            "total_chunks": total_chunks(self.current_document),
             "upload_date": self.current_document.upload_date.isoformat()
         }
 

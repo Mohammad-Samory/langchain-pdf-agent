@@ -1,7 +1,6 @@
 """PDF Document entity - represents a PDF in the domain."""
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List
 
 from pdf_agent.domain.shared.base_entity import BaseEntity
 
@@ -24,12 +23,4 @@ class PDFDocument(BaseEntity):
     total_pages: int
     file_size: int
     upload_date: datetime
-    chunks: List[PDFChunk] = None
-
-    def get_chunks_for_pages(self, pages: List[int]) -> List[PDFChunk]:
-        """Get all chunks for specific pages."""
-        return [chunk for chunk in self.chunks if chunk.page_number in pages]
-
-    def total_chunks(self) -> int:
-        """Get total number of chunks."""
-        return len(self.chunks)
+    chunks: list[PDFChunk] | None = None

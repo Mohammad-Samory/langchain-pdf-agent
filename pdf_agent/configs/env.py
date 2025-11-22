@@ -23,7 +23,7 @@ LLM_PROVIDER = getenv('LLM_PROVIDER', 'google')
 OPENAI_API_KEY = getenv('OPENAI_API_KEY', '')
 
 # Google Gemini Configuration
-GOOGLE_API_KEY = getenv('GOOGLE_API_KEY', '')
+GOOGLE_API_KEY = getenv('GOOGLE_API_KEY', 'AIzaSyCBmiIhzhQIW7EtISHy2-bZktqRqK3yGbA')
 
 # Agent Configuration
 LLM_MODEL = getenv('LLM_MODEL', 'gpt-4o-mini')

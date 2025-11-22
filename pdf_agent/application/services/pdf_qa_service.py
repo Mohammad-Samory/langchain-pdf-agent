@@ -1,8 +1,9 @@
 """PDF Q&A Service - Application layer service."""
-from typing import Optional
-from uuid import uuid4
 
 from pdf_agent.application.agent.pdf_qa_agent import PDFQAAgent
+from pdf_agent.application.base_service import BaseService
+from pdf_agent.application.services.conversation_helper import add_message, create_conversation, get_conversation_history
+from pdf_agent.application.services.pdf_document_helper import total_chunks
 from pdf_agent.configs.env import LLM_MODEL, LLM_PROVIDER, LLM_TEMPERATURE
 from pdf_agent.configs.log import get_logger
 from pdf_agent.domain.pdf.conversation import Conversation
@@ -12,15 +13,16 @@ from pdf_agent.infrastructure.vectorstore.vector_store import VectorStore
 logger = get_logger()
 
 
-class PDFQAService:
+class PDFQAService(BaseService):
     """Service for managing PDF Q&A operations."""
 
     def __init__(self):
         """Initialize the service with required components."""
+        super().__init__()
         self.pdf_processor = PDFProcessor(chunk_size=1000, chunk_overlap=200)
         self.vector_store = VectorStore()
-        self.agent: Optional[PDFQAAgent] = None
-        self.current_conversation: Optional[Conversation] = None
+        self.agent: PDFQAAgent | None = None
+        self.current_conversation: Conversation | None = None
         logger.info(f"PDFQAService initialized with {LLM_PROVIDER} provider")
 
     def upload_and_index_pdf(self, file_path: str, filename: str) -> dict:
@@ -53,15 +55,15 @@ class PDFQAService:
                 )
 
             # Start new conversation
-            self.current_conversation = Conversation(id=uuid4(), pdf_filename=filename)
+            self.current_conversation = create_conversation(pdf_filename=filename)
 
-            logger.info(f"Successfully indexed {filename} with {document.total_chunks()} chunks")
+            logger.info(f"Successfully indexed {filename} with {total_chunks(document)} chunks")
 
             return {
                 "status": "success",
                 "filename": document.filename,
                 "total_pages": document.total_pages,
-                "total_chunks": document.total_chunks(),
+                "total_chunks": total_chunks(document),
                 "message": f"PDF '{filename}' successfully uploaded and indexed"
             }
 
@@ -90,23 +92,23 @@ class PDFQAService:
             }
 
         if not self.current_conversation:
-            self.current_conversation = Conversation(
-                id=uuid4(),
+            self.current_conversation = create_conversation(
                 pdf_filename=self.vector_store.get_current_document_info().get("filename", "Unknown")
             )
 
         # Add user message to conversation
-        self.current_conversation.add_message("user", question)
+        add_message(self.current_conversation, "user", question)
 
         # Get conversation history for context
-        history = self.current_conversation.get_conversation_history()[:-1]  # Exclude current question
+        history = get_conversation_history(self.current_conversation)[:-1]  # Exclude current question
 
         # Ask the agent
         result = self.agent.ask(question, conversation_history=history)
 
         # Add assistant response to conversation
         if "answer" in result:
-            self.current_conversation.add_message(
+            add_message(
+                self.current_conversation,
                 "assistant",
                 result["answer"],
                 sources=result.get("sources", [])
@@ -122,13 +124,13 @@ class PDFQAService:
         """Get the current conversation history."""
         if not self.current_conversation:
             return []
-        return self.current_conversation.get_conversation_history()
+        return get_conversation_history(self.current_conversation)
 
     def clear_conversation(self) -> dict:
         """Clear the current conversation history."""
         if self.current_conversation:
             filename = self.current_conversation.pdf_filename
-            self.current_conversation = Conversation(id=uuid4(), pdf_filename=filename)
+            self.current_conversation = create_conversation(pdf_filename=filename)
             return {"status": "success", "message": "Conversation cleared"}
         return {"status": "info", "message": "No active conversation"}
 
