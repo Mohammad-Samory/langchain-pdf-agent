@@ -1,53 +1,26 @@
 """API routes for PDF Q&A."""
 import os
 import tempfile
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from pydantic import BaseModel, Field
 
 from pdf_agent.application.services.pdf_qa_service import PDFQAService
 from pdf_agent.configs.log import get_logger
+from pdf_agent.presentation.dependencies import get_service
+from pdf_agent.presentation.models.pdf_models import (
+    AskQuestionRequest, AskQuestionResponse, ClearAllResponse, ClearConversationResponse, GetConversationResponse,
+    GetDocumentInfoResponse, UploadPDFResponse
+)
 
 logger = get_logger()
 router = APIRouter()
 
-# Singleton service instance
-_pdf_qa_service: Optional[PDFQAService] = None
 
-
-def get_pdf_qa_service() -> PDFQAService:
-    """Get or create the PDF Q&A service singleton."""
-    global _pdf_qa_service
-    if _pdf_qa_service is None:
-        _pdf_qa_service = PDFQAService()
-        logger.info("Created new PDFQAService singleton instance")
-    return _pdf_qa_service
-
-
-class QuestionRequest(BaseModel):
-    """Request model for asking questions."""
-    question: str = Field(..., description="Question about the PDF", min_length=1)
-
-
-class AnswerResponse(BaseModel):
-    """Response model for answers."""
-    answer: str
-    sources: List[dict] = []
-    error: Optional[str] = None
-
-
-class DocumentInfo(BaseModel):
-    """Response model for document information."""
-    filename: Optional[str] = None
-    total_pages: Optional[int] = None
-    total_chunks: Optional[int] = None
-    upload_date: Optional[str] = None
-    status: Optional[str] = None
-
-
-@router.post("/upload", summary="Upload a PDF file")
-async def upload_pdf(file: UploadFile = File(...), service: PDFQAService = Depends(get_pdf_qa_service)) -> dict:
+@router.post("/upload", response_model=UploadPDFResponse, summary="Upload a PDF file")
+async def upload_pdf(
+    file: UploadFile = File(...),
+    service: PDFQAService = Depends(get_service(PDFQAService))
+) -> UploadPDFResponse:
     """
     Upload and index a PDF file for Q&A.
 
@@ -56,7 +29,7 @@ async def upload_pdf(file: UploadFile = File(...), service: PDFQAService = Depen
     Returns document information and indexing status.
     """
     # Validate file type
-    if not file.filename.endswith('.pdf'):
+    if not file.filename or not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
 
     logger.info(f"Received PDF upload: {file.filename}")
@@ -69,7 +42,7 @@ async def upload_pdf(file: UploadFile = File(...), service: PDFQAService = Depen
             tmp_path = tmp_file.name
 
         # Process and index
-        result = service.upload_and_index_pdf(tmp_path, file.filename)
+        result = service.upload_and_index_pdf(tmp_path, file.filename or "unknown.pdf")
 
         # Clean up temp file
         os.unlink(tmp_path)
@@ -77,7 +50,7 @@ async def upload_pdf(file: UploadFile = File(...), service: PDFQAService = Depen
         if result.get("status") == "error":
             raise HTTPException(status_code=500, detail=result.get("message"))
 
-        return result
+        return UploadPDFResponse(**result)
 
     except Exception as e:
         logger.error(f"Error uploading PDF: {e}")
@@ -90,8 +63,11 @@ async def upload_pdf(file: UploadFile = File(...), service: PDFQAService = Depen
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ask", response_model=AnswerResponse, summary="Ask a question")
-async def ask_question(request: QuestionRequest, service: PDFQAService = Depends(get_pdf_qa_service)) -> AnswerResponse:
+@router.post("/ask", response_model=AskQuestionResponse, summary="Ask a question")
+async def ask_question(
+    request: AskQuestionRequest,
+    service: PDFQAService = Depends(get_service(PDFQAService))
+) -> AskQuestionResponse:
     """
     Ask a question about the uploaded PDF.
 
@@ -104,7 +80,7 @@ async def ask_question(request: QuestionRequest, service: PDFQAService = Depends
     try:
         result = service.ask_question(request.question)
 
-        return AnswerResponse(
+        return AskQuestionResponse(
             answer=result.get("answer", ""),
             sources=result.get("sources", []),
             error=result.get("error")
@@ -115,46 +91,48 @@ async def ask_question(request: QuestionRequest, service: PDFQAService = Depends
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/document", response_model=DocumentInfo, summary="Get document info")
-async def get_document_info(service: PDFQAService = Depends(get_pdf_qa_service)) -> DocumentInfo:
+@router.get("/document", response_model=GetDocumentInfoResponse, summary="Get document info")
+async def get_document_info(service: PDFQAService = Depends(get_service(PDFQAService))) -> GetDocumentInfoResponse:
     """
     Get information about the currently indexed document.
 
     Returns document metadata including filename, page count, and chunk count.
     """
     info = service.get_document_info()
-    return DocumentInfo(**info)
+    return GetDocumentInfoResponse(**info)
 
 
-@router.get("/conversation", summary="Get conversation history")
-async def get_conversation(service: PDFQAService = Depends(get_pdf_qa_service)) -> dict:
+@router.get("/conversation", response_model=GetConversationResponse, summary="Get conversation history")
+async def get_conversation(service: PDFQAService = Depends(get_service(PDFQAService))) -> GetConversationResponse:
     """
     Get the conversation history for the current session.
 
     Returns list of messages with timestamps.
     """
     history = service.get_conversation_history()
-    return {
-        "conversation": history,
-        "message_count": len(history)
-    }
+    return GetConversationResponse(
+        conversation=history,
+        message_count=len(history)
+    )
 
 
-@router.delete("/conversation", summary="Clear conversation")
-async def clear_conversation(service: PDFQAService = Depends(get_pdf_qa_service)) -> dict:
+@router.delete("/conversation", response_model=ClearConversationResponse, summary="Clear conversation")
+async def clear_conversation(service: PDFQAService = Depends(get_service(PDFQAService))) -> ClearConversationResponse:
     """
     Clear the current conversation history.
 
     Keeps the indexed document but resets the conversation.
     """
-    return service.clear_conversation()
+    result = service.clear_conversation()
+    return ClearConversationResponse(**result)
 
 
-@router.delete("/all", summary="Clear everything")
-async def clear_all(service: PDFQAService = Depends(get_pdf_qa_service)) -> dict:
+@router.delete("/all", response_model=ClearAllResponse, summary="Clear everything")
+async def clear_all(service: PDFQAService = Depends(get_service(PDFQAService))) -> ClearAllResponse:
     """
     Clear the indexed document and conversation.
 
     Resets the service to initial state.
     """
-    return service.clear_all()
+    result = service.clear_all()
+    return ClearAllResponse(**result)

@@ -1,6 +1,6 @@
 # PDF Q&A Agent with LangGraph
 
-A LangGraph React-style conversational agent that answers questions about PDF documents using vector search and LLM reasoning.
+A LangGraph React-style conversational agent that answers questions about PDF documents using vector search and LLM reasoning. Built with FastAPI and domain-driven design principles.
 
 ## 🚀 Features
 
@@ -10,32 +10,18 @@ A LangGraph React-style conversational agent that answers questions about PDF do
 - **LangGraph Agent**: React-style agent that decides when to search the document
 - **Conversational**: Maintains context across multiple questions
 - **Source Citations**: Answers include page number references
-- **REST API**: Simple FastAPI endpoints for upload and Q&A
+- **FastAPI REST API**: Clean, modern API with automatic documentation
 - **Domain-Driven Design**: Clean architecture with separated layers
 
 ## 📋 Prerequisites
 
-### For Windows
-
-- Docker Desktop (with WSL 2 backend)
+- Docker Desktop (with WSL 2 backend for Windows)
 - Python 3.13+ (for local development)
 - OpenAI API Key
 
-### For Linux/Mac
+## 🛠️ Quick Start
 
-- Docker and Docker Compose
-- Python 3.13+
-- OpenAI API Key
-
-## 🛠️ Setup
-
-### 1. Clone and Navigate
-
-```bash
-cd pdf-agent
-```
-
-### 2. Set Environment Variables
+### 1. Set Environment Variables
 
 Create a `.env` file in the project root:
 
@@ -53,35 +39,21 @@ CHUNK_OVERLAP=200
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 ```
 
-**Important**: Get your OpenAI API key from https://platform.openai.com/api-keys
+Get your OpenAI API key from https://platform.openai.com/api-keys
 
-### 3. Build and Run with Docker (Recommended)
-
-#### Windows (PowerShell):
-
-```powershell
-# Build the container
-docker-compose build pdf-agent
-
-# Start the service
-docker-compose up pdf-agent
-```
-
-#### Linux/Mac:
+### 2. Run with Docker (Recommended)
 
 ```bash
-# Build the container
+# Build and start
 docker-compose build pdf-agent
-
-# Start the service
 docker-compose up pdf-agent
 ```
 
 The API will be available at: **http://localhost:8200**
 
-### 4. Local Development (Without Docker)
+### 3. Local Development (Without Docker)
 
-#### Windows:
+**Windows:**
 
 ```powershell
 # Create virtual environment
@@ -91,15 +63,11 @@ python -m venv venv
 # Install dependencies
 pip install -r requirements.txt
 
-# Set environment variables
-$env:OPENAI_API_KEY="your-key-here"
-$env:ENVIRONMENT="development"
-
 # Run the application
 uvicorn pdf_agent.app:app --reload --host 0.0.0.0 --port 8200
 ```
 
-#### Linux/Mac:
+**Linux/Mac:**
 
 ```bash
 # Create virtual environment
@@ -108,10 +76,6 @@ source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
-
-# Set environment variables
-export OPENAI_API_KEY="your-key-here"
-export ENVIRONMENT="development"
 
 # Run the application
 uvicorn pdf_agent.app:app --reload --host 0.0.0.0 --port 8200
@@ -298,32 +262,7 @@ pdf_agent/
 - **Infrastructure Layer**: External integrations (PDF, vector DB, LLM)
 - **Presentation Layer**: HTTP API endpoints
 
-## 🧪 Testing
-
-```bash
-# Run tests with Docker
-docker-compose run --rm pdf-agent-test
-
-# Run tests locally
-pytest
-
-# With coverage
-pytest --cov=pdf_agent --cov-report=html
-```
-
 ## 🔧 Development
-
-### Linting and Type Checking
-
-```bash
-# Run all checks
-docker-compose run --rm pdf-agent-lint
-
-# Individual checks
-flake8 .
-isort --check --diff .
-mypy pdf_agent/
-```
 
 ### Update Dependencies
 
@@ -376,31 +315,14 @@ mypy pdf_agent/
    - Conversation history updated
    - Sources (page numbers) included
 
-## 🚨 Troubleshooting
+## 🚨 Common Issues
 
-### "No PDF has been uploaded"
-
-- Upload a PDF first using `/api/upload`
-
-### "Import langchain could not be resolved"
-
-- Install dependencies: `pip install -r requirements.txt`
-
-### "OpenAI API key not found"
-
-- Set `OPENAI_API_KEY` environment variable
-- Or add to `.env` file
-
-### Docker issues on Windows
-
-- Ensure Docker Desktop is running
-- Check WSL 2 backend is enabled
-- Verify with: `docker --version`
-
-### Port already in use
-
-- Stop other services using port 8200
-- Or change port in `compose.yml`: `"8201:80"`
+| Issue                      | Solution                                                    |
+| -------------------------- | ----------------------------------------------------------- |
+| "No PDF has been uploaded" | Upload a PDF first using `/api/upload`                      |
+| "OpenAI API key not found" | Set `OPENAI_API_KEY` in `.env` file                         |
+| Docker not starting        | Ensure Docker Desktop is running                            |
+| Port already in use        | Change port in `compose.yml` or stop other services on 8200 |
 
 ## 📝 Example Session
 

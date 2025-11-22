@@ -15,4 +15,5 @@ __all__ = [
     'FieldException',
     'ForbiddenException',
     'ValidationException',
+    'UnauthorizedException',
 ]

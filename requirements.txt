@@ -24,7 +24,7 @@ fastapi-cloud-cli==0.5.1
 fastar==0.6.0
 filelock==3.20.0
 filetype==1.2.0
-flake8==7.1.1
+flake8==7.2.0
 frozenlist==1.8.0
 fsspec==2025.10.0
 google-ai-generativelanguage==0.6.15
@@ -106,12 +106,12 @@ protobuf==5.29.5
 psycopg2-binary==2.9.10
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
-pycodestyle==2.12.1
+pycodestyle==2.13.0
 pycparser==2.23
 pydantic==2.9.2
 pydantic-settings==2.12.0
 pydantic_core==2.23.4
-pyflakes==3.2.0
+pyflakes==3.3.0
 Pygments==2.19.2
 pyparsing==3.2.5
 pypdf==5.1.0
