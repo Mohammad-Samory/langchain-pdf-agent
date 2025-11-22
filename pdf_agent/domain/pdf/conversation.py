@@ -2,7 +2,6 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
-from uuid import UUID
 
 from pdf_agent.domain.shared.base_entity import BaseEntity
 

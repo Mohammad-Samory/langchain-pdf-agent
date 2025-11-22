@@ -1,11 +1,14 @@
 """LangGraph React-style agent for PDF Q&A."""
+import re
 from typing import List, Literal
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolNode
+from pydantic import SecretStr
 
 from pdf_agent.application.base_service import BaseService
 from pdf_agent.configs.env import GOOGLE_API_KEY, LLM_PROVIDER, OPENAI_API_KEY
@@ -24,7 +27,7 @@ class PDFQAAgent(BaseService):
         vector_store: VectorStore,
         model_name: str = "gpt-4o-mini",
         temperature: float = 0.0,
-        provider: str = None
+        provider: str | None = None
     ):
         """Initialize the agent with vector store and LLM."""
         super().__init__()
@@ -35,17 +38,17 @@ class PDFQAAgent(BaseService):
 
         # Initialize LLM based on provider
         if self.provider == "google":
-            self.llm = ChatGoogleGenerativeAI(
+            self.llm: ChatOpenAI | ChatGoogleGenerativeAI = ChatGoogleGenerativeAI(
                 model=model_name,
                 temperature=temperature,
-                google_api_key=GOOGLE_API_KEY
+                api_key=SecretStr(GOOGLE_API_KEY) if GOOGLE_API_KEY else None
             )
             logger.info(f"Initialized PDFQAAgent with Google Gemini: {model_name}")
         else:
             self.llm = ChatOpenAI(
                 model=model_name,
                 temperature=temperature,
-                api_key=OPENAI_API_KEY
+                api_key=SecretStr(OPENAI_API_KEY) if OPENAI_API_KEY else None
             )
             logger.info(f"Initialized PDFQAAgent with OpenAI: {model_name}")
 
@@ -54,8 +57,6 @@ class PDFQAAgent(BaseService):
 
     def _create_vector_search_tool(self):
         """Create the vector search tool for LangGraph."""
-        from langchain_core.tools import tool
-
         @tool
         def search_pdf(query: str, k: int = 4) -> str:
             """
@@ -90,7 +91,7 @@ class PDFQAAgent(BaseService):
 
         return search_pdf
 
-    def _create_graph(self) -> StateGraph:
+    def _create_graph(self):
         """Create the LangGraph workflow."""
         # Create tool
         search_tool = self._create_vector_search_tool()
@@ -154,11 +155,9 @@ class PDFQAAgent(BaseService):
         workflow.add_edge("tools", "agent")
 
         # Compile
-        app = workflow.compile()
+        return workflow.compile()
 
-        return app
-
-    def ask(self, question: str, conversation_history: List[dict] = None) -> dict:
+    def ask(self, question: str, conversation_history: List[dict] | None = None) -> dict:
         """
         Ask a question about the PDF.
 
@@ -195,7 +194,7 @@ Be conversational and helpful."""
         )
 
         # Build messages
-        messages = [system_message]
+        messages: list[BaseMessage] = [system_message]
 
         # Add conversation history if provided
         if conversation_history:
@@ -210,7 +209,7 @@ Be conversational and helpful."""
 
         # Invoke the graph
         try:
-            result = self.graph.invoke({"messages": messages})
+            result = self.graph.invoke({"messages": messages})  # type: ignore[attr-defined]
 
             # Extract final answer
             final_message = result["messages"][-1]
@@ -243,7 +242,6 @@ Be conversational and helpful."""
             content = str(msg.content)
 
             # Look for page numbers in the format "Page X"
-            import re
             page_matches = re.findall(r'Page (\d+)', content)
 
             for page_num in set(page_matches):

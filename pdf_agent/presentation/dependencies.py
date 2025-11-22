@@ -11,7 +11,10 @@ _service_instances: dict[type, Any] = {}
 
 
 @overload
-def get_service[T: BaseService](service_class: type[T]) -> Callable[..., T]: ...
+def get_service(service_class: type[BaseService]) -> Callable[..., BaseService]: ...
+
+@overload
+def get_service(service_class: type[Any]) -> Callable[..., Any]: ...
 
 
 def get_service(service_class: type[Any]) -> Callable[..., Any]:

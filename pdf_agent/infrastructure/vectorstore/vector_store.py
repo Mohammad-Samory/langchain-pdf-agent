@@ -29,6 +29,10 @@ class VectorStore:
 
     def index_document(self, document: PDFDocument) -> None:
         """Index a PDF document's chunks into the vector store."""
+        if document.chunks is None:
+            logger.warning(f"Document {document.filename} has no chunks")
+            return
+        
         logger.info(f"Indexing document: {document.filename} with {len(document.chunks)} chunks")
 
         # Convert chunks to LangChain Document format

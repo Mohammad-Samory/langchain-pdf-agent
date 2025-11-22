@@ -3,6 +3,7 @@ import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
+from uuid import UUID
 
 import pdfplumber
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -85,8 +86,9 @@ class PDFProcessor:
 
         # Create PDFDocument entity
         now = datetime.now(timezone.utc)
+        doc_id_str = hashlib.md5(path.name.encode()).hexdigest()
         document = PDFDocument(
-            id=hashlib.md5(path.name.encode()).hexdigest(),
+            id=UUID(doc_id_str[:32].ljust(32, '0')),
             filename=path.name,
             file_path=str(path.absolute()),
             total_pages=len(text_with_pages),

@@ -30,7 +30,7 @@ async def upload_pdf(file: UploadFile = File(...), service: PDFQAService = Depen
     Returns document information and indexing status.
     """
     # Validate file type
-    if not file.filename.endswith('.pdf'):
+    if not file.filename or not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
 
     logger.info(f"Received PDF upload: {file.filename}")
@@ -43,7 +43,7 @@ async def upload_pdf(file: UploadFile = File(...), service: PDFQAService = Depen
             tmp_path = tmp_file.name
 
         # Process and index
-        result = service.upload_and_index_pdf(tmp_path, file.filename)
+        result = service.upload_and_index_pdf(tmp_path, file.filename or "unknown.pdf")
 
         # Clean up temp file
         os.unlink(tmp_path)

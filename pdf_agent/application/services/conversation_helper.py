@@ -1,7 +1,7 @@
 """Helper functions for Conversation domain operations."""
 from datetime import datetime, timezone
 from typing import List, Optional
-from uuid import uuid4, UUID
+from uuid import uuid4
 
 from pdf_agent.domain.pdf.conversation import Conversation, Message
 
@@ -26,12 +26,16 @@ def add_message(conversation: Conversation, role: str, content: str, sources: Op
         timestamp=datetime.now(timezone.utc),
         sources=sources
     )
+    if conversation.messages is None:
+        conversation.messages = []
     conversation.messages.append(message)
     conversation.updated_at = datetime.now(timezone.utc)
 
 
 def get_conversation_history(conversation: Conversation) -> List[dict]:
     """Get formatted conversation history for LangGraph."""
+    if conversation.messages is None:
+        return []
     return [
         {
             "role": msg.role,
