@@ -1,7 +1,7 @@
 """Helper functions for PDFDocument domain operations."""
 from typing import List
 
-from pdf_agent.domain.pdf.pdf_document import PDFDocument, PDFChunk
+from pdf_agent.domain.pdf.pdf_document import PDFChunk, PDFDocument
 
 
 def get_chunks_for_pages(document: PDFDocument, pages: List[int]) -> List[PDFChunk]:

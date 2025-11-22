@@ -2,7 +2,9 @@
 
 from pdf_agent.application.agent.pdf_qa_agent import PDFQAAgent
 from pdf_agent.application.base_service import BaseService
-from pdf_agent.application.services.conversation_helper import add_message, create_conversation, get_conversation_history
+from pdf_agent.application.services.conversation_helper import (
+    add_message, create_conversation, get_conversation_history
+)
 from pdf_agent.application.services.pdf_document_helper import total_chunks
 from pdf_agent.configs.env import LLM_MODEL, LLM_PROVIDER, LLM_TEMPERATURE
 from pdf_agent.configs.log import get_logger

@@ -3,17 +3,13 @@ import os
 import tempfile
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from pdf_agent.presentation.dependencies import get_service
+
 from pdf_agent.application.services.pdf_qa_service import PDFQAService
 from pdf_agent.configs.log import get_logger
+from pdf_agent.presentation.dependencies import get_service
 from pdf_agent.presentation.models.pdf_models import (
-    AskQuestionRequest,
-    AskQuestionResponse,
-    ClearAllResponse,
-    ClearConversationResponse,
-    GetConversationResponse,
-    GetDocumentInfoResponse,
-    UploadPDFResponse,
+    AskQuestionRequest, AskQuestionResponse, ClearAllResponse, ClearConversationResponse, GetConversationResponse,
+    GetDocumentInfoResponse, UploadPDFResponse
 )
 
 logger = get_logger()
@@ -21,7 +17,10 @@ router = APIRouter()
 
 
 @router.post("/upload", response_model=UploadPDFResponse, summary="Upload a PDF file")
-async def upload_pdf(file: UploadFile = File(...), service: PDFQAService = Depends(get_service(PDFQAService))) -> UploadPDFResponse:
+async def upload_pdf(
+    file: UploadFile = File(...),
+    service: PDFQAService = Depends(get_service(PDFQAService))
+) -> UploadPDFResponse:
     """
     Upload and index a PDF file for Q&A.
 
@@ -65,7 +64,10 @@ async def upload_pdf(file: UploadFile = File(...), service: PDFQAService = Depen
 
 
 @router.post("/ask", response_model=AskQuestionResponse, summary="Ask a question")
-async def ask_question(request: AskQuestionRequest, service: PDFQAService = Depends(get_service(PDFQAService))) -> AskQuestionResponse:
+async def ask_question(
+    request: AskQuestionRequest,
+    service: PDFQAService = Depends(get_service(PDFQAService))
+) -> AskQuestionResponse:
     """
     Ask a question about the uploaded PDF.
 

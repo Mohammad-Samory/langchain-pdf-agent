@@ -32,7 +32,7 @@ class VectorStore:
         if document.chunks is None:
             logger.warning(f"Document {document.filename} has no chunks")
             return
-        
+
         logger.info(f"Indexing document: {document.filename} with {len(document.chunks)} chunks")
 
         # Convert chunks to LangChain Document format
